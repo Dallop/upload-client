@@ -2,6 +2,7 @@ import React from 'react'
 import cc from 'create-react-class'
 import pt from 'prop-types'
 import { connect } from 'react-redux'
+import Save from 'App/shared/Save'
 
 import {
   Flex,
@@ -15,13 +16,20 @@ import {
   CheckboxOption,
   settings as s
 } from 'boostly-ui'
-import { getLocationEntity, updateLocationEntity } from './actions'
-import { getLocationData } from './selectors'
+import {
+  getLocationEntity,
+  updateLocationEntity,
+  getPickUpScheduleEntities,
+  createPickUpSchedule,
+  updatePickUpSchedule
+} from './actions'
+import { getLocationData, getPickUpSchedules } from './selectors'
 import {
   indexToWeekDay,
   createNewDay,
   addAvailability,
-  createTimestamp
+  createTimestamp,
+  createNewArray
 } from './logic'
 import { Tab, Tabs, TabList, TabPanels } from 'App/shared/TabComponents'
 
@@ -54,7 +62,7 @@ const ManageLocation = cc({
       address: { line1: '', zip: '', state: '', city: '' },
       availableMethods: [],
       availableTimings: [],
-      pickUpHours: [],
+      pickUpSchedule: null,
       changesWereMade: false
     }
   },
@@ -87,37 +95,20 @@ const ManageLocation = cc({
     this.setState(() => ({ availableTimings: value }))
     this.changesWereMade()
   },
-  onPickUpHoursChange (newSchedule) {
-    this.setState(() => ({ pickUpHours: newSchedule }))
-    this.changesWereMade()
-  },
   onSave () {
-    const {
-      name,
-      address,
-      availableMethods,
-      availableTimings,
-      pickUpHours
-    } = this.state
-    const blankDay = createNewDay()
+    const { name, address, availableMethods, availableTimings } = this.state
     this.props.updateLocationData({
       name,
       address,
       availableMethods,
-      availableTimings,
-      pickUpHours: {
-        models: toMap(
-          pickUpHours.map(
-            day =>
-              addAvailability({
-                day: blankDay,
-                startStamp: createTimestamp(day.startTime),
-                endStamp: createTimestamp(day.endTime)
-              })
-          )
-        )
-      }
+      availableTimings
     })
+  },
+  updateLocationPickUpSchedule (scheduleId) {
+    this.props.updateLocationData({ pickUpSchedule: scheduleId })
+  },
+  onCreateNewScheduleRequest () {
+    this.props.updateLocationData({ pickUpSchedule: null })
   },
   render () {
     const {
@@ -125,7 +116,7 @@ const ManageLocation = cc({
       address,
       availableTimings,
       availableMethods,
-      pickUpHours,
+      pickUpSchedule,
       changesWereMade
     } = this.state
     return (
@@ -211,8 +202,13 @@ const ManageLocation = cc({
             </TabPanel>
             <TabPanel>
               <Scheduling
-                schedule={pickUpHours}
-                onScheduleUpdate={this.onPickUpHoursChange}
+                creatingNew={!pickUpSchedule}
+                onCreateNewRequest={this.onCreateNewScheduleRequest}
+                pickUpSchedule={pickUpSchedule}
+                pickUpSchedules={this.props.pickUpSchedules}
+                onNewScheduleSelect={this.updateLocationPickUpSchedule}
+                createNewPickUpSchedule={this.props.createPickUpSchedule}
+                updatePickUpSchedule={this.props.updatePickUpSchedule}
               />
             </TabPanel>
           </TabPanels>
@@ -224,24 +220,51 @@ const ManageLocation = cc({
 
 export default connect(
   (state, props) => ({
-    locationData: getLocationData({ id: props.match.params.locId })(state) || {}
+    locationData: getLocationData(props.match.params.locId)(state) || {},
+    pickUpSchedules: getPickUpSchedules(props.match.params.orgId)(state) || []
   }),
-  (dispatch, props) => ({
-    getLocationData: () => dispatch(getLocationEntity(props.match.params)),
-    updateLocationData: locData =>
-      console.log(locData) ||
-        dispatch(updateLocationEntity({ ...props.match.params, locData }))
-  })
+  (dispatch, props) => {
+    const docIds = props.match.params
+    return {
+      getLocationData: () => {
+        dispatch(getLocationEntity(docIds))
+        dispatch(getPickUpScheduleEntities(docIds))
+      },
+      updateLocationData: locData =>
+        dispatch(updateLocationEntity({ ...docIds, locData })),
+      createPickUpSchedule: newSchedule =>
+        dispatch(createPickUpSchedule(docIds)(newSchedule)),
+      updatePickUpSchedule: newSchedule =>
+        dispatch(updatePickUpSchedule(docIds)(newSchedule))
+    }
+  }
 )(ManageLocation)
 
 const meridiems = [ 'am', 'pm' ]
 const hours = [ 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11 ]
 const minutes = [ '00', 15, 30, 45 ]
+const timeObj = { hour: 12, minute: 0, meridiem: 'AM' }
+const defaultPickUpSchedule = {
+  models: createNewArray(7, { startTime: timeObj, endTime: timeObj })
+}
 const Scheduling = cc({
-  propTypes: { schedule: pt.array, onScheduleUpdate: pt.func },
+  propTypes: { schedule: pt.array },
+  getInitialState () {
+    return {
+      pickUpSchedule: this.props.pickUpSchedule || defaultPickUpSchedule,
+      changesWereMade: false,
+      editingExisting: false
+    }
+  },
+  componentWillReceiveProps (next) {
+    this.setState(prev => ({
+      pickUpSchedule: next.pickUpSchedule || defaultPickUpSchedule
+    }))
+  },
   onValueUpdate (dayIndex, isStartTime, propValueUpdated) {
     return ({ target }) => {
-      const { schedule, onScheduleUpdate } = this.props
+      const { pickUpSchedule } = this.state
+      const schedule = pickUpSchedule.models
       const periodName = isStartTime ? 'startTime' : 'endTime'
       const day = schedule[dayIndex]
       const updatedDay = {
@@ -249,17 +272,98 @@ const Scheduling = cc({
         [periodName]: { ...day[periodName], [propValueUpdated]: target.value }
       }
 
-      onScheduleUpdate([
-        ...schedule.slice(0, dayIndex),
-        updatedDay,
-        ...schedule.slice(dayIndex + 1, schedule.length)
-      ])
+      this.setState({
+        pickUpSchedule: {
+          ...pickUpSchedule,
+          models: [
+            ...schedule.slice(0, dayIndex),
+            updatedDay,
+            ...schedule.slice(dayIndex + 1, schedule.length)
+          ]
+        },
+        changesWereMade: true,
+        editingExisting: !this.props.creatingNew
+      })
     }
   },
+  onScheduleSelect ({ target }) {
+    if (target.value === 'new') {
+      this.props.onCreateNewRequest()
+    } else {
+      this.props.onNewScheduleSelect(target.value)
+    }
+  },
+  onNameUpdate ({ target }) {
+    this.setState(prev => ({
+      pickUpSchedule: { ...prev.pickUpSchedule, name: target.value },
+      changesWereMade: true
+    }))
+  },
+  savePickUpHours () {
+    if (!this.state.pickUpSchedule.name) {
+      return window.alert('Schedule Needs a Name')
+    }
+    const action = this.props.creatingNew
+      ? this.props.createNewPickUpSchedule
+      : this.props.updatePickUpSchedule
+
+    const blankDay = createNewDay()
+    action({
+      ...this.state.pickUpSchedule,
+      models: toMap(
+        this.state.pickUpSchedule.models.map(
+          day =>
+            addAvailability({
+              day: blankDay,
+              startStamp: createTimestamp(day.startTime),
+              endStamp: createTimestamp(day.endTime)
+            })
+        )
+      )
+    })
+    this.setState(prev => ({ changesWereMade: false }))
+  },
   render () {
+    const { pickUpSchedules } = this.props
     return (
       <Box>
-        {this.props.schedule.map((day, dayIndex) => (
+        <Flex justify='space-between' px={2} py={2}>
+          <Box w='70%'>
+            {
+              pickUpSchedules.length
+                ? <Select
+                  value={this.state.pickUpSchedule.id}
+                  onChange={this.onScheduleSelect}
+                >
+                  <option value='new'>Create New Schedule</option>
+                  {
+                    pickUpSchedules.map((c, i) => (
+                      <option value={c.id} key={i}>{c.name}</option>
+                    ))
+                  }
+                </Select>
+                : <Box height='40px' />
+            }
+          </Box>
+          {
+            (this.props.creatingNew || this.state.editingExisting) &&
+              this.state.changesWereMade
+              ? <Save size='30px' onClick={this.savePickUpHours} />
+              : <Box height='30px' />
+          }
+        </Flex>
+        <Box>
+          <InputField
+            label='Schedule Name'
+            onChange={this.onNameUpdate}
+            value={
+              this.state.pickUpSchedule.id || this.state.pickUpSchedule.name
+                ? this.state.pickUpSchedule.name
+                : ''
+            }
+          />
+        </Box>
+        {this.state.pickUpSchedule.models.map((day, dayIndex) => (
           <Box
             mb={2}
             bg={
@@ -293,7 +397,7 @@ const Scheduling = cc({
                             <Box w='33%' ml={i > 0 ? 1 : 0}>
                               <Select
                                 value={
-                                  this.props.schedule[dayIndex][label][props.valueName]
+                                  this.state.pickUpSchedule.models[dayIndex][label][props.valueName]
                                 }
                                 onChange={
                                   this.onValueUpdate(

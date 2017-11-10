@@ -4,7 +4,7 @@ import {
   docsToEntities,
   docToEntity,
   orgRef
-} from 'App/state'
+} from 'App/state/utils'
 
 const getMenuData = id => state => {
   const menu = state.entities.menus[id]
@@ -124,12 +124,6 @@ export const getMenuCategoryEntities = makeMenuEntitiesGetter({
   action: addCategoriesToList
 })
 
-const UPDATE_OPTION_SETS = 'UPDATE_OPTION_SETS'
-const addOptionSetToList = ({ menuId, ids }) => ({
-  type: UPDATE_OPTION_SETS,
-  payload: { menuId, ids }
-})
-
 export const createOptionSetEntity = ({ orgId, menuId }) =>
   setObj =>
     dispatch =>
@@ -140,6 +134,11 @@ export const createOptionSetEntity = ({ orgId, menuId }) =>
         .collection('optionSets')
         .add(setObj)
 
+const UPDATE_OPTION_SETS = 'UPDATE_OPTION_SETS'
+const addOptionSetToList = ({ menuId, ids }) => ({
+  type: UPDATE_OPTION_SETS,
+  payload: { menuId, ids }
+})
 export const getOptionSetEntities = makeMenuEntitiesGetter({
   collectionName: 'optionSets',
   action: addOptionSetToList
@@ -148,19 +147,13 @@ export const getOptionSetEntities = makeMenuEntitiesGetter({
 export const updateOptionSetEntity = ({ orgId, menuId }) =>
   (id, setObj) =>
     dispatch =>
-        orgRef
-          .doc(orgId)
-          .collection('menus')
-          .doc(menuId)
-          .collection('optionSets')
-          .doc(id)
-          .set(setObj)
-
-const UPDATE_OPTIONS = 'UPDATE_OPTIONS'
-const addOptionsToList = ({ menuId, ids }) => ({
-  type: UPDATE_OPTIONS,
-  payload: { menuId, ids }
-})
+      orgRef
+        .doc(orgId)
+        .collection('menus')
+        .doc(menuId)
+        .collection('optionSets')
+        .doc(id)
+        .set(setObj)
 
 export const createOptionEntity = ({ orgId, menuId }) =>
   optionObj =>
@@ -171,7 +164,11 @@ export const createOptionEntity = ({ orgId, menuId }) =>
         .doc(menuId)
         .collection('options')
         .add(optionObj)
-
+const UPDATE_OPTIONS = 'UPDATE_OPTIONS'
+const addOptionsToList = ({ menuId, ids }) => ({
+  type: UPDATE_OPTIONS,
+  payload: { menuId, ids }
+})
 export const getOptionEntities = makeMenuEntitiesGetter({
   collectionName: 'options',
   action: addOptionsToList

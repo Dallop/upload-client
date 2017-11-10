@@ -335,7 +335,6 @@ const ManageOrg = cc({
       onFormSubmit
     } = this.getModalProps()
     const { name, locations, menus } = this.props.orgData
-    console.log(this.props.match)
     return (
       <Box>
         <Box p={2}>

@@ -11,7 +11,7 @@ var config = getConfig({
   out: buildPath,
   resolves: [ 'shared' ],
   featureFlags: { __DEV__: isDev, __PROD__: !isDev },
-  devServer: { contentBase: buildPath },
+  devServer: { contentBase: buildPath, port: 8081 },
   html: isDev ? html.dev : html.prod
 })
 

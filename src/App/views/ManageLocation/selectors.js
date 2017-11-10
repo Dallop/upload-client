@@ -1,4 +1,4 @@
-import { createNewArray, weekModelToTimeObj } from './logic'
+import { weekModelToTimeObj } from './logic'
 
 const timeObj = { hour: 12, minute: 0, meridiem: 'AM' }
 const toWeekArray = weekMap => [
@@ -20,15 +20,23 @@ const unwrapFromArrays = weekModel => weekModel.map(day => {
   }
 })
 
-export const getLocationData = id => state => {
-  const location = state.entities.locations[id]
+export const getLocationData = id => ({ entities }) => {
+  const location = entities.locations[id]
   if (!location) return {}
+  const pickUpScheduleObj = entities.pickUpSchedules[location.pickUpSchedule]
   return {
     ...location,
-    pickUpHours: location.pickUpHours
-      ? unwrapFromArrays(
-        weekModelToTimeObj(toWeekArray(location.pickUpHours.models))
-      )
-      : createNewArray(7, { startTime: timeObj, endTime: timeObj })
+    pickUpSchedule: pickUpScheduleObj
+      ? {
+        ...pickUpScheduleObj,
+        models: unwrapFromArrays(
+          weekModelToTimeObj(toWeekArray(pickUpScheduleObj.models))
+        )
+      }
+      : null
   }
 }
+
+export const getPickUpSchedules = orgId =>
+  ({ entities, pickUpSchedules }) =>
+    (pickUpSchedules[orgId] || []).map(id => entities.pickUpSchedules[id])

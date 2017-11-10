@@ -1,6 +1,10 @@
-import db from 'config/api'
 import { combineReducers } from 'redux'
-export const orgRef = db.collection('orgs')
+import {
+  orgRef,
+  addEntitiesToStore,
+  docToEntity,
+  docsToEntities
+} from './utils'
 
 const initialEntityState = {
   orgs: {},
@@ -9,7 +13,8 @@ const initialEntityState = {
   categories: {},
   optionSets: {},
   options: {},
-  menuItems: {}
+  menuItems: {},
+  pickUpSchedules: {}
 }
 const createReducerFn = name =>
   (state = initialEntityState[name], { payload }) =>
@@ -24,19 +29,11 @@ const entities = combineReducers({
   categories: createReducerFn('categories'),
   optionSets: createReducerFn('optionSets'),
   options: createReducerFn('options'),
-  menuItems: createReducerFn('menuItems')
+  menuItems: createReducerFn('menuItems'),
+  pickUpSchedules: createReducerFn('pickUpSchedules')
 })
 
 export const createNewOrg = orgObj => dispatch => orgRef.add(orgObj)
-
-export const addEntitiesToStore = (entityType, entities) => ({
-  type: 'ADD_ENTITIES',
-  payload: { entities: { [entityType]: entities } }
-})
-
-export const docToEntity = doc => ({ [doc.id]: { id: doc.id, ...doc.data() } })
-export const docsToEntities = docs =>
-  docs.reduce((entities, doc) => ({ ...entities, ...docToEntity(doc) }), {})
 
 export const getOrgEntity = id =>
   dispatch =>
@@ -54,5 +51,6 @@ export const getOrgEntities = () =>
 
 export default combineReducers({
   entities,
-  ...require('App/views/ManageMenu/state').default
+  ...require('App/views/ManageMenu/state').default,
+  ...require('App/views/ManageLocation/actions').default
 })

@@ -1,4 +1,4 @@
-import { addEntitiesToStore, docsToEntities, orgRef } from 'App/state'
+import { addEntitiesToStore, docsToEntities, orgRef } from 'App/state/utils'
 
 export const createNewLocation = orgId =>
   locationObj => (dispatch, getState) => {

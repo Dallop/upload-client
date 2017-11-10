@@ -137,7 +137,7 @@ const ManageMenu = cc({
       <Box pb={4}>
         {this.renderHeading()}
         {!selectedMenuItem && (
-        <Flex>
+        <Flex wrap>
           <ListItem onClick={this.createNewMenuItem}>
             <Title fontSize={6}>+</Title>
             <Title>Create</Title>
