@@ -1,6 +1,8 @@
-import db from 'config/api'
+import { db } from 'config/api'
 import { createReducer } from 'state/utils'
 export const orgRef = db.collection('orgs')
+
+export const dbRef = db
 
 export const addEntitiesToStore = (entityType, entities) => ({
   type: 'ADD_ENTITIES',
@@ -11,11 +13,10 @@ export const docToEntity = doc => ({ [doc.id]: { id: doc.id, ...doc.data() } })
 export const docsToEntities = docs =>
   docs.reduce((entities, doc) => ({ ...entities, ...docToEntity(doc) }), {})
 
-// need to make work for more than menus
 const makeChildEntitiesGetter = (
   { collectionName, parentCollectionName, action }
 ) =>
-  ({ orgId, id }) => dispatch => {
+  ({ orgId, id, ...rest }) => dispatch => {
     const rootRef = parentCollectionName
       ? orgRef.doc(orgId).collection(parentCollectionName).doc(id)
       : orgRef.doc(orgId)

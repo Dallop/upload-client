@@ -29,6 +29,7 @@
     "react-router-dom": "^4.1.2",
     "redux": "3.6.0",
     "redux-axios-api-middleware": "0.2.0",
+    "redux-firestore-middleware": "^1.0.0",
     "redux-thunk": "^2.2.0",
     "webfontloader": "^1.6.28"
   },

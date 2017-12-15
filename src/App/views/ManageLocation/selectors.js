@@ -40,3 +40,6 @@ export const getLocationData = id => ({ entities }) => {
 export const getPickUpSchedules = orgId =>
   ({ entities, pickUpSchedules }) =>
     (pickUpSchedules[orgId] || []).map(id => entities.pickUpSchedules[id])
+
+export const getMenus = orgId =>
+  ({ entities, menus }) => (menus[orgId] || []).map(id => entities.menus[id])

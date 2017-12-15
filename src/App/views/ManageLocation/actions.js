@@ -1,3 +1,4 @@
+import { createAsyncActions as aa } from 'state/utils'
 import {
   addEntitiesToStore,
   docToEntity,
@@ -16,8 +17,10 @@ export const getLocationEntity = ({ orgId, locId }) =>
       )
 
 const pickUpSchedule = makeEntityDuck({ collectionName: 'pickUpSchedules' })
-
 export const getPickUpScheduleEntities = pickUpSchedule.getter
+
+const menus = makeEntityDuck({ collectionName: 'menus' })
+export const getMenuEntities = menus.getter
 
 export const updateLocationEntity = ({ orgId, locId, locData }) =>
   dispatch =>
@@ -48,11 +51,10 @@ export const createPickUpSchedule = ({ orgId, locId }) =>
 export const updatePickUpSchedule = ({ orgId }) =>
   schedule =>
     dispatch =>
-      console.log(schedule) ||
-        orgRef
-          .doc(orgId)
-          .collection('pickUpSchedules')
-          .doc(schedule.id)
-          .update(schedule)
+      orgRef
+        .doc(orgId)
+        .collection('pickUpSchedules')
+        .doc(schedule.id)
+        .update(schedule)
 
-export default { pickUpSchedules: pickUpSchedule.reducer }
+export default { pickUpSchedules: pickUpSchedule.reducer, menus: menus.reducer }

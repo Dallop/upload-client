@@ -2,7 +2,6 @@ module.exports = {
   dev: function (data) {
     return `
     <!doctype html>
-
     <html>
       <head>
         <title>React Starter</title>

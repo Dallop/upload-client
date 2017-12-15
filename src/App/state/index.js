@@ -5,6 +5,7 @@ import {
   docToEntity,
   docsToEntities
 } from './utils'
+export const callStore = require('config/api').callStore
 
 const initialEntityState = {
   orgs: {},
@@ -42,6 +43,17 @@ export const getOrgEntity = id =>
       .onSnapshot(
         doc => dispatch(addEntitiesToStore('orgs', docToEntity(doc)))
       )
+
+const getOrgData = orgId => ({ entities }) => {
+  const org = entities.orgs[orgId] || {}
+  return {
+    ...org,
+    locations: (org.locations || []).map(id => entities.locations[id] || {}),
+    menus: (org.menus || []).map(id => entities.menus[id] || {})
+  }
+}
+
+export const selectors = { getOrgData }
 
 export const getOrgEntities = () =>
   dispatch =>

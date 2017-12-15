@@ -21,9 +21,10 @@ import {
   updateLocationEntity,
   getPickUpScheduleEntities,
   createPickUpSchedule,
-  updatePickUpSchedule
+  updatePickUpSchedule,
+  getMenuEntities
 } from './actions'
-import { getLocationData, getPickUpSchedules } from './selectors'
+import { getLocationData, getPickUpSchedules, getMenus } from './selectors'
 import {
   indexToWeekDay,
   createNewDay,
@@ -96,12 +97,19 @@ const ManageLocation = cc({
     this.changesWereMade()
   },
   onSave () {
-    const { name, address, availableMethods, availableTimings } = this.state
+    const {
+      name,
+      address,
+      availableMethods,
+      availableTimings,
+      menuId
+    } = this.state
     this.props.updateLocationData({
       name,
       address,
       availableMethods,
-      availableTimings
+      availableTimings,
+      menuId
     })
   },
   updateLocationPickUpSchedule (scheduleId) {
@@ -110,6 +118,10 @@ const ManageLocation = cc({
   onCreateNewScheduleRequest () {
     this.props.updateLocationData({ pickUpSchedule: null })
   },
+  onMenuSelect ({ target }) {
+    this.setState(() => ({ menuId: target.value }))
+    this.changesWereMade()
+  },
   render () {
     const {
       name,
@@ -117,7 +129,9 @@ const ManageLocation = cc({
       availableTimings,
       availableMethods,
       pickUpSchedule,
-      changesWereMade
+      changesWereMade,
+      menuId,
+      stripeCustomAccountId
     } = this.state
     return (
       <Box pb={4}>
@@ -135,7 +149,9 @@ const ManageLocation = cc({
           <TabList>
             <Tab><Title>Name & Address</Title></Tab>
             <Tab><Title>Timing & Method</Title></Tab>
-            <Tab><Title>Availability</Title></Tab>
+            <Tab><Title>Pick Up Schedule</Title></Tab>
+            <Tab><Title>Menu</Title></Tab>
+            <Tab><Title>Stripe</Title></Tab>
           </TabList>
           <TabPanels>
             <TabPanel>
@@ -177,12 +193,8 @@ const ManageLocation = cc({
                 selectedValue={availableTimings}
                 onChange={this.onTimingChange}
               >
-                <CheckboxOption value='NOW'>
+                <CheckboxOption value='AjPpwlD4mW5haxJEJtIw'>
                   <Text>Now</Text>
-                </CheckboxOption>
-                <Box mt={1} />
-                <CheckboxOption value='LATER'>
-                  <Text>Later</Text>
                 </CheckboxOption>
               </CheckboxGroup>
               <Box mt={2} />
@@ -191,7 +203,7 @@ const ManageLocation = cc({
                 selectedValue={availableMethods}
                 onChange={this.onMethodChange}
               >
-                <CheckboxOption value='PICK_UP'>
+                <CheckboxOption value='4prfEmaexQMWiYcodPFh'>
                   <Text>Pick Up</Text>
                 </CheckboxOption>
                 <Box mt={1} />
@@ -211,6 +223,25 @@ const ManageLocation = cc({
                 updatePickUpSchedule={this.props.updatePickUpSchedule}
               />
             </TabPanel>
+            <TabPanel>
+              <Box w='70%'>
+                {
+                  this.props.menus.length
+                    ? <Select value={menuId} onChange={this.onMenuSelect}>
+                      <option>Pick a Menu</option>
+                      {
+                        this.props.menus.map((m, i) => (
+                          <option value={m.id} key={i}>{m.name}</option>
+                        ))
+                      }
+                    </Select>
+                    : <Box>No Menu's Created Yet</Box>
+                }
+              </Box>
+            </TabPanel>
+            <TabPanel>
+              <Text>Stripe Account Id: {stripeCustomAccountId}</Text>
+            </TabPanel>
           </TabPanels>
         </Tabs>
       </Box>
@@ -221,12 +252,14 @@ const ManageLocation = cc({
 export default connect(
   (state, props) => ({
     locationData: getLocationData(props.match.params.locId)(state) || {},
-    pickUpSchedules: getPickUpSchedules(props.match.params.orgId)(state) || []
+    pickUpSchedules: getPickUpSchedules(props.match.params.orgId)(state) || [],
+    menus: getMenus(props.match.params.orgId)(state)
   }),
   (dispatch, props) => {
     const docIds = props.match.params
     return {
       getLocationData: () => {
+        dispatch(getMenuEntities(docIds))
         dispatch(getLocationEntity(docIds))
         dispatch(getPickUpScheduleEntities(docIds))
       },
@@ -241,7 +274,7 @@ export default connect(
 )(ManageLocation)
 
 const meridiems = [ 'am', 'pm' ]
-const hours = [ 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 11 ]
+const hours = [ 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ]
 const minutes = [ '00', 15, 30, 45 ]
 const timeObj = { hour: 12, minute: 0, meridiem: 'AM' }
 const defaultPickUpSchedule = {

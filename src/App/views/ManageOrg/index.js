@@ -3,7 +3,6 @@ import cc from 'create-react-class'
 import pt from 'prop-types'
 import { connect } from 'react-redux'
 import { Link } from 'react-router-dom'
-import { getOrgEntity } from 'App/state'
 import {
   Flex,
   Box,
@@ -21,7 +20,7 @@ import {
   createNewMenu,
   getMenuEntities
 } from './actions'
-import { getOrgData } from './selectors'
+import { getOrgEntity, selectors } from 'App/state'
 import ListItem from 'App/shared/ListItem'
 
 const Label = ({ label }) => (
@@ -104,26 +103,17 @@ const CreateLocationForm = cc({
           selectedValue={this.state.availableTimings}
           onChange={this.onTimingChange}
         >
-          <CheckboxOption value='NOW'>
+          <CheckboxOption value='AjPpwlD4mW5haxJEJtIw'>
             <Text>Now</Text>
           </CheckboxOption>
-          <Box mt={1} />
-          <CheckboxOption value='LATER'>
-            <Text>Later</Text>
-          </CheckboxOption>
         </CheckboxGroup>
-        <Box mt={2} />
         <Label label='Select Methods Available' />
         <CheckboxGroup
           selectedValue={this.state.availableMethods}
           onChange={this.onMethodChange}
         >
-          <CheckboxOption value='PICK_UP'>
+          <CheckboxOption value='4prfEmaexQMWiYcodPFh'>
             <Text>Pick Up</Text>
-          </CheckboxOption>
-          <Box mt={1} />
-          <CheckboxOption value='DELIVERY'>
-            <Text>Delivery</Text>
           </CheckboxOption>
         </CheckboxGroup>
       </Box>
@@ -392,7 +382,7 @@ const ManageOrg = cc({
 
 export default connect(
   (state, props) => ({
-    orgData: getOrgData(props.match.params.id)(state),
+    orgData: selectors.getOrgData(props.match.params.id)(state),
     orgId: props.match.params.id
   }),
   (dispatch, props) => ({

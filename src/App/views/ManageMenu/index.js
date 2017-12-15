@@ -191,17 +191,21 @@ const ManageMenuItem = connect(
     optionSets: selectors.getOptionSets(props.menuId)(state),
     options: selectors.getOptions(props.menuId)(state)
   }),
-  (dispatch, props) => ({
-    createMenuCategory: catObj => dispatch(createMenuCategory(props)(catObj)),
-    getMenuCategories: () => dispatch(getMenuCategoryEntities(props)),
-    createOptionSet: setObj => dispatch(createOptionSetEntity(props)(setObj)),
-    getOptionSets: () => dispatch(getOptionSetEntities(props)),
-    updateOptionSet: (id, setObj) =>
-      dispatch(updateOptionSetEntity(props)(id, setObj)),
-    createOption: optionObj => dispatch(createOptionEntity(props)(optionObj)),
-    getOptions: () => dispatch(getOptionEntities(props)),
-    updateOption: (id, opObj) => dispatch(updateOptionEntity(props)(id, opObj))
-  })
+  (dispatch, props) => {
+    const ids = { orgId: props.orgId, id: props.menuId }
+    return {
+      createMenuCategory: catObj => dispatch(createMenuCategory(props)(catObj)),
+      getMenuCategories: () => dispatch(getMenuCategoryEntities(ids)),
+      createOptionSet: setObj => dispatch(createOptionSetEntity(ids)(setObj)),
+      getOptionSets: () => dispatch(getOptionSetEntities(ids)),
+      updateOptionSet: (id, setObj) =>
+        dispatch(updateOptionSetEntity(props)(id, setObj)),
+      createOption: optionObj => dispatch(createOptionEntity(props)(optionObj)),
+      getOptions: () => dispatch(getOptionEntities(ids)),
+      updateOption: (id, opObj) =>
+        dispatch(updateOptionEntity(props)(id, opObj))
+    }
+  }
 )(
   cc({
     propTypes: { defaultItemInfo: pt.object, menuCategories: pt.array },
